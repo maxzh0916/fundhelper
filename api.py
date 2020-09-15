@@ -1,4 +1,5 @@
 import requests
+import threading
 from parse import parse
 
 
@@ -15,3 +16,76 @@ def market_stat():
     else:
         return False
 
+
+class TTJJW(threading.Thread):
+    def __init__(self, code):
+        threading.Thread.__init__(self)
+        self.code = code
+        self.name = str()
+        self.evalue = str()
+        self.chg = str()
+
+    def run(self):
+        response = requests.get('http://fundgz.1234567.com.cn/js/' + '519674' + '.js').text
+        processed = parse('jsonpgz({"fundcode":"{code}","name":"{name}","jzrq":"{jztime}","dwjz":"{dwjz}","gsz":"{zxgz}","gszzl":"{chg}","gztime":"{gztime}"});', response)
+        self.name = processed['name']
+        self.evalue = processed['zxgz']
+        self.chg = processed['chg']
+
+    def result(self):
+        return self.code, self.evalue, self.chg, self.name
+
+
+class XLJJ(threading.Thread):
+    def __init__(self, code):
+        threading.Thread.__init__(self)
+        self.code = code
+        self.name = str()
+        self.evalue = str()
+        self.chg = str()
+
+    def run(self):
+        response = requests.get('https://hq.sinajs.cn/list=fu_' + self.code).text
+        processed = parse('var hq_str_fu_' + self.code + '="{name},{time},{zxgz},{dwjz},{ljdwjz},{unknown},{chg},{date}";', response)
+        self.name = processed['name']
+        self.evalue = processed['zxgz']
+        self.chg = processed['chg']
+
+    def result(self):
+        return self.code, self.evalue, self.chg, self.name
+
+
+class AJJ(threading.Thread):
+    def __init__(self, code):
+        threading.Thread.__init__(self)
+        self.code = code
+
+    def run(self):
+        print(self.code)
+
+    def result(self):
+        return 'ajj'
+
+
+class JJMMW(threading.Thread):
+    def __init__(self, code):
+        threading.Thread.__init__(self)
+        self.code = code
+
+    def run(self):
+        print(self.code)
+
+    def result(self):
+        return 'jjmmw'
+
+
+class TXCJ(threading.Thread):
+    def __init__(self, code):
+        threading.Thread.__init__(self)
+        self.code = code
+
+    def run(self):
+        print(self.code)
+
+    def result(self):
+        return 'txcj'
