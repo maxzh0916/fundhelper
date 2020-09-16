@@ -18,74 +18,84 @@ def market_stat():
 
 
 class TTJJW(threading.Thread):
-    def __init__(self, code):
+    def __init__(self, fund_code):
         threading.Thread.__init__(self)
-        self.code = code
-        self.name = str()
+        self.fund_code = fund_code
+        self.fund_name = str()
         self.evalue = str()
         self.chg = str()
 
     def run(self):
-        response = requests.get('http://fundgz.1234567.com.cn/js/' + '519674' + '.js').text
+        response = requests.get('http://fundgz.1234567.com.cn/js/' + self.fund_code + '.js').text
         processed = parse('jsonpgz({"fundcode":"{code}","name":"{name}","jzrq":"{jztime}","dwjz":"{dwjz}","gsz":"{zxgz}","gszzl":"{chg}","gztime":"{gztime}"});', response)
-        self.name = processed['name']
+        self.fund_name = processed['name']
         self.evalue = processed['zxgz']
         self.chg = processed['chg']
 
     def result(self):
-        return self.code, self.evalue, self.chg, self.name
+        return self.fund_code, self.evalue, self.chg, self.fund_name, self.name
 
 
 class XLJJ(threading.Thread):
-    def __init__(self, code):
+    def __init__(self, fund_code):
         threading.Thread.__init__(self)
-        self.code = code
-        self.name = str()
+        self.fund_code = fund_code
         self.evalue = str()
         self.chg = str()
 
     def run(self):
-        response = requests.get('https://hq.sinajs.cn/list=fu_' + self.code).text
-        processed = parse('var hq_str_fu_' + self.code + '="{name},{time},{zxgz},{dwjz},{ljdwjz},{unknown},{chg},{date}";', response)
-        self.name = processed['name']
+        response = requests.get('https://hq.sinajs.cn/list=fu_' + self.fund_code).text
+        processed = parse('var hq_str_fu_' + self.fund_code + '="{name},{time},{zxgz},{dwjz},{ljdwjz},{unknown},{chg},{date}";', response)
         self.evalue = processed['zxgz']
         self.chg = processed['chg']
 
     def result(self):
-        return self.code, self.evalue, self.chg, self.name
+        return self.fund_code, self.evalue, self.chg, self.name
 
 
 class AJJ(threading.Thread):
-    def __init__(self, code):
+    def __init__(self, fund_code):
         threading.Thread.__init__(self)
-        self.code = code
+        self.fund_code = fund_code
+        self.evalue = str()
+        self.chg = str()
 
     def run(self):
-        print(self.code)
+        fund_data = requests.get('http://fund.10jqka.com.cn/data/client/myfund/' + self.fund_code).json()
+        hq_code = fund_data['data'][0]['hqcode']
+        response = requests.get('http://gz-fund.10jqka.com.cn/?module=api&action=chart&info=vm_fd_' + hq_code).text
+        processed = parse(
+            "vm_fd_" + hq_code + "='{date1};0930-1130,1300-1500|{date2}~{yesterday_value}~{chart}'",
+            response)['chart'].split(';')
+        for index in range(len(processed)):
+            processed[index] = processed[index].split(',')
+        self.evalue = processed[-1][1]
+        self.chg = str(round((float(processed[-1][1]) - float(processed[-1][2])) / float(processed[-1][2]), 4))
+
 
     def result(self):
-        return 'ajj'
+        return self.fund_code, self.evalue, self.chg, self.name
 
 
 class JJMMW(threading.Thread):
-    def __init__(self, code):
+    def __init__(self, fund_code):
         threading.Thread.__init__(self)
-        self.code = code
+        self.fund_code = fund_code
 
     def run(self):
-        print(self.code)
+        print(self.fund_code)
 
     def result(self):
         return 'jjmmw'
 
 
 class TXCJ(threading.Thread):
-    def __init__(self, code):
+    def __init__(self, fund_code):
         threading.Thread.__init__(self)
-        self.code = code
+        self.fund_code = fund_code
 
     def run(self):
-        print(self.code)
+        print(self.fund_code)
 
     def result(self):
         return 'txcj'
