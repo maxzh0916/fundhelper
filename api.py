@@ -20,45 +20,48 @@ def market_stat():
 class TTJJW(threading.Thread):
     def __init__(self, fund_code):
         threading.Thread.__init__(self)
+        self.name = 'TTJJW'
         self.fund_code = fund_code
         self.fund_name = str()
         self.evalue = str()
-        self.chg = str()
+        self.chngpct = str()
 
     def run(self):
         response = requests.get('http://fundgz.1234567.com.cn/js/' + self.fund_code + '.js').text
         processed = parse('jsonpgz({"fundcode":"{code}","name":"{name}","jzrq":"{jztime}","dwjz":"{dwjz}","gsz":"{zxgz}","gszzl":"{chg}","gztime":"{gztime}"});', response)
         self.fund_name = processed['name']
         self.evalue = processed['zxgz']
-        self.chg = processed['chg']
+        self.chngpct = processed['chg'] + '%'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chg, self.fund_name, self.name
+        return self.fund_code, self.evalue, self.chngpct, self.fund_name, self.name
 
 
 class XLJJ(threading.Thread):
     def __init__(self, fund_code):
         threading.Thread.__init__(self)
+        self.name = 'XLJJ'
         self.fund_code = fund_code
         self.evalue = str()
-        self.chg = str()
+        self.chngpct = str()
 
     def run(self):
         response = requests.get('https://hq.sinajs.cn/list=fu_' + self.fund_code).text
         processed = parse('var hq_str_fu_' + self.fund_code + '="{name},{time},{zxgz},{dwjz},{ljdwjz},{unknown},{chg},{date}";', response)
         self.evalue = processed['zxgz']
-        self.chg = processed['chg']
+        self.chngpct = str(round(float(processed['chg']), 2)) + '%'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chg, self.name
+        return self.fund_code, self.evalue, self.chngpct, self.name
 
 
 class AJJ(threading.Thread):
     def __init__(self, fund_code):
         threading.Thread.__init__(self)
+        self.name = 'AJJ'
         self.fund_code = fund_code
         self.evalue = str()
-        self.chg = str()
+        self.chngpct = str()
 
     def run(self):
         fund_data = requests.get('http://fund.10jqka.com.cn/data/client/myfund/' + self.fund_code).json()
@@ -69,33 +72,42 @@ class AJJ(threading.Thread):
             response)['chart'].split(';')
         for index in range(len(processed)):
             processed[index] = processed[index].split(',')
-        self.evalue = processed[-1][1]
-        self.chg = str(round((float(processed[-1][1]) - float(processed[-1][2])) / float(processed[-1][2]), 4))
-
+        self.evalue = str(round(float(processed[-1][1]), 4))
+        self.chngpct = str(round(((float(processed[-1][1]) - float(processed[-1][2])) / float(processed[-1][2]) * 100), 2)) + '%'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chg, self.name
+        return self.fund_code, self.evalue, self.chngpct, self.name
 
 
 class JJMMW(threading.Thread):
     def __init__(self, fund_code):
         threading.Thread.__init__(self)
+        self.name = 'JJMMW'
         self.fund_code = fund_code
+        self.evalue = str()
+        self.chngpct = str()
 
     def run(self):
-        print(self.fund_code)
+        response = requests.get('http://www.jjmmw.com/fund/ajax/jjgz_timechart/?fund_id=' + self.fund_code).json()
+        self.evalue = str(round(response['latest']['estnav'], 4))
+        self.chngpct = str(round(response['latest']['estchngpct'], 2)) + '%'
 
     def result(self):
-        return 'jjmmw'
+        return self.fund_code, self.evalue, self.chngpct, self.name
 
 
 class TXCJ(threading.Thread):
     def __init__(self, fund_code):
         threading.Thread.__init__(self)
+        self.name = 'TXCJ'
         self.fund_code = fund_code
+        self.evalue = str()
+        self.chngpct = str()
 
     def run(self):
-        print(self.fund_code)
+        response = requests.get('http://web.ifzq.gtimg.cn/fund/newfund/fundSsgz/getSsgz?app=web&symbol=jj' + self.fund_code).json()
+        self.evalue = str(response['data']['data'][-1][1])
+        self.chngpct = str(round((response['data']['data'][-1][2] / float(response['data']['yesterdayDwjz']) * 100), 2)) + '%'
 
     def result(self):
-        return 'txcj'
+        return self.fund_code, self.evalue, self.chngpct, self.name

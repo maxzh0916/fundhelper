@@ -1,7 +1,9 @@
 import api
 import setting
+import push_msg
 
 if __name__ == '__main__':
+    data = []
     if setting.TREADING_TIME:
         market_stat = api.market_stat()
         if not market_stat:
@@ -18,5 +20,5 @@ if __name__ == '__main__':
         for t in threads:
             t.start()
             t.join()
-
-        print(ttjjw.result(), xljj.result(), ajj.result(), jjmmw.result(), txcj.result())
+        data.append((ttjjw.result(), xljj.result(), ajj.result(), jjmmw.result(), txcj.result()))
+    push_msg.server_chan(data)
