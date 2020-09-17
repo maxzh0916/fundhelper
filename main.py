@@ -18,7 +18,11 @@ if __name__ == '__main__':
         txcj = api.TXCJ(code)
         threads = [ttjjw, xljj, ajj, jjmmw, txcj]
         for t in threads:
-            t.start()
-            t.join()
-        data.append((ttjjw.result(), xljj.result(), ajj.result(), jjmmw.result(), txcj.result()))
+            if t.name in setting.SOURCE_LIST:
+                t.start()
+        for t in threads:
+            if t.name in setting.SOURCE_LIST:
+                t.join()
+        if ttjjw.result() or xljj.result() or ajj.result() or jjmmw.result() or txcj.result():
+            data.append((ttjjw.result(), xljj.result(), ajj.result(), jjmmw.result(), txcj.result()))
     push_msg.server_chan(data)

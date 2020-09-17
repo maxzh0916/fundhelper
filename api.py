@@ -25,16 +25,22 @@ class TTJJW(threading.Thread):
         self.fund_name = str()
         self.evalue = str()
         self.chngpct = str()
+        self.status_code = int()
 
     def run(self):
-        response = requests.get('http://fundgz.1234567.com.cn/js/' + self.fund_code + '.js').text
-        processed = parse('jsonpgz({"fundcode":"{code}","name":"{name}","jzrq":"{jztime}","dwjz":"{dwjz}","gsz":"{zxgz}","gszzl":"{chg}","gztime":"{gztime}"});', response)
-        self.fund_name = processed['name']
-        self.evalue = processed['zxgz']
-        self.chngpct = processed['chg'] + '%'
+        response = requests.get('http://fundgz.1234567.com.cn/js/' + self.fund_code + '.js')
+        self.status_code = response.status_code
+        if self.status_code == 200:
+            processed = parse('jsonpgz({"fundcode":"{code}","name":"{name}","jzrq":"{jztime}","dwjz":"{dwjz}","gsz":"{zxgz}","gszzl":"{chg}","gztime":"{gztime}"});', response.text)
+            self.fund_name = processed['name']
+            self.evalue = processed['zxgz']
+            self.chngpct = processed['chg'] + '%'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chngpct, self.fund_name, self.name
+        if self.status_code == 200:
+            return self.fund_code, self.evalue, self.chngpct, self.fund_name, self.name
+        else:
+            return None
 
 
 class XLJJ(threading.Thread):
@@ -44,15 +50,22 @@ class XLJJ(threading.Thread):
         self.fund_code = fund_code
         self.evalue = str()
         self.chngpct = str()
+        self.status = str()
 
     def run(self):
         response = requests.get('https://hq.sinajs.cn/list=fu_' + self.fund_code).text
         processed = parse('var hq_str_fu_' + self.fund_code + '="{name},{time},{zxgz},{dwjz},{ljdwjz},{unknown},{chg},{date}";', response)
-        self.evalue = processed['zxgz']
-        self.chngpct = str(round(float(processed['chg']), 2)) + '%'
+        try:
+            self.evalue = processed['zxgz']
+            self.chngpct = str(round(float(processed['chg']), 2)) + '%'
+        except TypeError:
+            self.status = 'fail'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chngpct, self.name
+        if self.status == 'fail':
+            return None
+        else:
+            return self.fund_code, self.evalue, self.chngpct, self.name
 
 
 class AJJ(threading.Thread):
@@ -62,21 +75,28 @@ class AJJ(threading.Thread):
         self.fund_code = fund_code
         self.evalue = str()
         self.chngpct = str()
+        self.status = str()
 
     def run(self):
         fund_data = requests.get('http://fund.10jqka.com.cn/data/client/myfund/' + self.fund_code).json()
-        hq_code = fund_data['data'][0]['hqcode']
-        response = requests.get('http://gz-fund.10jqka.com.cn/?module=api&action=chart&info=vm_fd_' + hq_code).text
-        processed = parse(
-            "vm_fd_" + hq_code + "='{date1};0930-1130,1300-1500|{date2}~{yesterday_value}~{chart}'",
-            response)['chart'].split(';')
-        for index in range(len(processed)):
-            processed[index] = processed[index].split(',')
-        self.evalue = str(round(float(processed[-1][1]), 4))
-        self.chngpct = str(round(((float(processed[-1][1]) - float(processed[-1][2])) / float(processed[-1][2]) * 100), 2)) + '%'
+        if fund_data['error']['id'] == 0:
+            hq_code = fund_data['data'][0]['hqcode']
+            response = requests.get('http://gz-fund.10jqka.com.cn/?module=api&action=chart&info=vm_fd_' + hq_code).text
+            processed = parse(
+                "vm_fd_" + hq_code + "='{date1};0930-1130,1300-1500|{date2}~{yesterday_value}~{chart}'",
+                response)['chart'].split(';')
+            for index in range(len(processed)):
+                processed[index] = processed[index].split(',')
+            self.evalue = str(round(float(processed[-1][1]), 4))
+            self.chngpct = str(round(((float(processed[-1][1]) - float(processed[-1][2])) / float(processed[-1][2]) * 100), 2)) + '%'
+        else:
+            self.status = 'fail'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chngpct, self.name
+        if self.status == 'fail':
+            return None
+        else:
+            return self.fund_code, self.evalue, self.chngpct, self.name
 
 
 class JJMMW(threading.Thread):
@@ -86,14 +106,21 @@ class JJMMW(threading.Thread):
         self.fund_code = fund_code
         self.evalue = str()
         self.chngpct = str()
+        self.status = str()
 
     def run(self):
         response = requests.get('http://www.jjmmw.com/fund/ajax/jjgz_timechart/?fund_id=' + self.fund_code).json()
-        self.evalue = str(round(response['latest']['estnav'], 4))
-        self.chngpct = str(round(response['latest']['estchngpct'], 2)) + '%'
+        if response['flag'] == 1:
+            self.evalue = str(round(response['latest']['estnav'], 4))
+            self.chngpct = str(round(response['latest']['estchngpct'], 2)) + '%'
+        else:
+            self.status = 'fail'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chngpct, self.name
+        if self.status == 'fail':
+            return None
+        else:
+            return self.fund_code, self.evalue, self.chngpct, self.name
 
 
 class TXCJ(threading.Thread):
@@ -103,11 +130,18 @@ class TXCJ(threading.Thread):
         self.fund_code = fund_code
         self.evalue = str()
         self.chngpct = str()
+        self.status = str()
 
     def run(self):
         response = requests.get('http://web.ifzq.gtimg.cn/fund/newfund/fundSsgz/getSsgz?app=web&symbol=jj' + self.fund_code).json()
-        self.evalue = str(response['data']['data'][-1][1])
-        self.chngpct = str(round((response['data']['data'][-1][2] / float(response['data']['yesterdayDwjz']) * 100), 2)) + '%'
+        if response['code'] == 0:
+            self.evalue = str(response['data']['data'][-1][1])
+            self.chngpct = str(round((response['data']['data'][-1][2] / float(response['data']['yesterdayDwjz']) * 100), 2)) + '%'
+        else:
+            self.status = 'fail'
 
     def result(self):
-        return self.fund_code, self.evalue, self.chngpct, self.name
+        if self.status == 'fail':
+            return None
+        else:
+            return self.fund_code, self.evalue, self.chngpct, self.name
