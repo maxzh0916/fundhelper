@@ -1,7 +1,7 @@
 ###通用###
 FUND_LIST = ['519674', '320007']  # 基金代码列表
-SOURCE_LIST = ['TTJJW', 'XLJJ', 'AJJ', 'JJMMW', 'TXCJ']  # 数据来源['TTJJW', 'XLJJ', 'AJJ', 'JJMMW', 'TXCJ']
-TREADING_TIME = False  # 检查交易时间
+SOURCE = ['TTJJW', 'XLJJ', 'AJJ', 'JJMMW', 'TXCJ']  # 数据来源['TTJJW', 'XLJJ', 'AJJ', 'JJMMW', 'TXCJ']
+TRADING_TIME = False  # 检查交易时间
 
 ###Server_Chan###
 SERVER_CHAN_PUSH = True  # 开启server_chan推送

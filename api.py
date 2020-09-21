@@ -1,5 +1,5 @@
 import requests
-import threading
+import multiprocessing
 from parse import parse
 
 
@@ -17,65 +17,70 @@ def market_stat():
         return False
 
 
-class TTJJW(threading.Thread):
-    def __init__(self, fund_code):
-        threading.Thread.__init__(self)
+class TTJJW(multiprocessing.Process):
+    def __init__(self, fund_code, queue):
+        multiprocessing.Process.__init__(self)
         self.name = 'TTJJW'
         self.fund_code = fund_code
-        self.fund_name = str()
-        self.evalue = str()
-        self.chngpct = str()
-        self.status_code = int()
+        self.queue = queue
+        self.data = {
+            'source': '天天基金网',
+            'fund_name': None,
+            'fund_code': fund_code,
+            'evalue': None,
+            'chngpct': None
+        }
 
     def run(self):
         response = requests.get('http://fundgz.1234567.com.cn/js/' + self.fund_code + '.js')
-        self.status_code = response.status_code
-        if self.status_code == 200:
+        status_code = response.status_code
+        if status_code == 200:
             processed = parse('jsonpgz({"fundcode":"{code}","name":"{name}","jzrq":"{jztime}","dwjz":"{dwjz}","gsz":"{zxgz}","gszzl":"{chg}","gztime":"{gztime}"});', response.text)
-            self.fund_name = processed['name']
-            self.evalue = processed['zxgz']
-            self.chngpct = processed['chg'] + '%'
-
-    def result(self):
-        if self.status_code == 200:
-            return self.fund_code, self.evalue, self.chngpct, self.fund_name, self.name
+            self.data['evalue'] = processed['zxgz']
+            self.data['chngpct'] = processed['chg'] + '%'
+            self.queue.put(self.data)
         else:
-            return None
+            pass
 
 
-class XLJJ(threading.Thread):
-    def __init__(self, fund_code):
-        threading.Thread.__init__(self)
+class XLJJ(multiprocessing.Process):
+    def __init__(self, fund_code, queue):
+        multiprocessing.Process.__init__(self)
         self.name = 'XLJJ'
         self.fund_code = fund_code
-        self.evalue = str()
-        self.chngpct = str()
-        self.status = str()
+        self.queue = queue
+        self.data = {
+            'source': '新浪基金',
+            'fund_name': None,
+            'fund_code': fund_code,
+            'evalue': None,
+            'chngpct': None
+        }
 
     def run(self):
         response = requests.get('https://hq.sinajs.cn/list=fu_' + self.fund_code).text
         processed = parse('var hq_str_fu_' + self.fund_code + '="{name},{time},{zxgz},{dwjz},{ljdwjz},{unknown},{chg},{date}";', response)
         try:
-            self.evalue = processed['zxgz']
-            self.chngpct = str(round(float(processed['chg']), 2)) + '%'
+            self.data['evalue'] = processed['zxgz']
+            self.data['chngpct'] = str(round(float(processed['chg']), 2)) + '%'
+            self.queue.put(self.data)
         except TypeError:
-            self.status = 'fail'
-
-    def result(self):
-        if self.status == 'fail':
-            return None
-        else:
-            return self.fund_code, self.evalue, self.chngpct, self.name
+            pass
 
 
-class AJJ(threading.Thread):
-    def __init__(self, fund_code):
-        threading.Thread.__init__(self)
+class AJJ(multiprocessing.Process):
+    def __init__(self, fund_code, queue):
+        multiprocessing.Process.__init__(self)
         self.name = 'AJJ'
         self.fund_code = fund_code
-        self.evalue = str()
-        self.chngpct = str()
-        self.status = str()
+        self.queue = queue
+        self.data = {
+            'source': '爱基金',
+            'fund_name': None,
+            'fund_code': fund_code,
+            'evalue': None,
+            'chngpct': None
+        }
 
     def run(self):
         fund_data = requests.get('http://fund.10jqka.com.cn/data/client/myfund/' + self.fund_code).json()
@@ -87,61 +92,56 @@ class AJJ(threading.Thread):
                 response)['chart'].split(';')
             for index in range(len(processed)):
                 processed[index] = processed[index].split(',')
-            self.evalue = str(round(float(processed[-1][1]), 4))
-            self.chngpct = str(round(((float(processed[-1][1]) - float(processed[-1][2])) / float(processed[-1][2]) * 100), 2)) + '%'
+            self.data['evalue'] = str(round(float(processed[-1][1]), 4))
+            self.data['chngpct'] = str(round(((float(processed[-1][1]) - float(processed[-1][2])) / float(processed[-1][2]) * 100), 2)) + '%'
+            self.queue.put(self.data)
         else:
-            self.status = 'fail'
-
-    def result(self):
-        if self.status == 'fail':
-            return None
-        else:
-            return self.fund_code, self.evalue, self.chngpct, self.name
+            pass
 
 
-class JJMMW(threading.Thread):
-    def __init__(self, fund_code):
-        threading.Thread.__init__(self)
+class JJMMW(multiprocessing.Process):
+    def __init__(self, fund_code, queue):
+        multiprocessing.Process.__init__(self)
         self.name = 'JJMMW'
         self.fund_code = fund_code
-        self.evalue = str()
-        self.chngpct = str()
-        self.status = str()
+        self.queue = queue
+        self.data = {
+            'source': '基金买卖网',
+            'fund_name': None,
+            'fund_code': fund_code,
+            'evalue': None,
+            'chngpct': None
+        }
 
     def run(self):
         response = requests.get('http://www.jjmmw.com/fund/ajax/jjgz_timechart/?fund_id=' + self.fund_code).json()
         if response['flag'] == 1:
-            self.evalue = str(round(response['latest']['estnav'], 4))
-            self.chngpct = str(round(response['latest']['estchngpct'], 2)) + '%'
+            self.data['evalue'] = str(round(response['latest']['estnav'], 4))
+            self.data['chngpct'] = str(round(response['latest']['estchngpct'], 2)) + '%'
+            self.queue.put(self.data)
         else:
-            self.status = 'fail'
-
-    def result(self):
-        if self.status == 'fail':
-            return None
-        else:
-            return self.fund_code, self.evalue, self.chngpct, self.name
+            pass
 
 
-class TXCJ(threading.Thread):
-    def __init__(self, fund_code):
-        threading.Thread.__init__(self)
+class TXCJ(multiprocessing.Process):
+    def __init__(self, fund_code, queue):
+        multiprocessing.Process.__init__(self)
         self.name = 'TXCJ'
         self.fund_code = fund_code
-        self.evalue = str()
-        self.chngpct = str()
-        self.status = str()
+        self.queue = queue
+        self.data = {
+            'source': '腾讯财经',
+            'fund_name': None,
+            'fund_code': fund_code,
+            'evalue': None,
+            'chngpct': None
+        }
 
     def run(self):
         response = requests.get('http://web.ifzq.gtimg.cn/fund/newfund/fundSsgz/getSsgz?app=web&symbol=jj' + self.fund_code).json()
         if response['code'] == 0:
-            self.evalue = str(response['data']['data'][-1][1])
-            self.chngpct = str(round((response['data']['data'][-1][2] / float(response['data']['yesterdayDwjz']) * 100), 2)) + '%'
+            self.data['evalue'] = str(response['data']['data'][-1][1])
+            self.data['chngpct'] = str(round((response['data']['data'][-1][2] / float(response['data']['yesterdayDwjz']) * 100), 2)) + '%'
+            self.queue.put(self.data)
         else:
-            self.status = 'fail'
-
-    def result(self):
-        if self.status == 'fail':
-            return None
-        else:
-            return self.fund_code, self.evalue, self.chngpct, self.name
+            pass

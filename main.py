@@ -1,28 +1,33 @@
 import api
 import setting
 import push_msg
+from multiprocessing import Queue
 
 if __name__ == '__main__':
-    data = []
-    if setting.TREADING_TIME:
+    data_queue = Queue()
+
+    # 检测交易时间
+    if setting.TRADING_TIME:
         market_stat = api.market_stat()
         if not market_stat:
             print('非交易时间，退出程序')
             exit()
 
+    # 启动进程
     for code in setting.FUND_LIST:
-        ttjjw = api.TTJJW(code)
-        xljj = api.XLJJ(code)
-        ajj = api.AJJ(code)
-        jjmmw = api.JJMMW(code)
-        txcj = api.TXCJ(code)
-        threads = [ttjjw, xljj, ajj, jjmmw, txcj]
-        for t in threads:
-            if t.name in setting.SOURCE_LIST:
+        ttjjw = api.TTJJW(code, data_queue)
+        xljj = api.XLJJ(code, data_queue)
+        ajj = api.AJJ(code, data_queue)
+        jjmmw = api.JJMMW(code, data_queue)
+        txcj = api.TXCJ(code, data_queue)
+        processes = [ttjjw, xljj, ajj, jjmmw, txcj]
+        for t in processes:
+            if t.name in setting.SOURCE:
                 t.start()
-        for t in threads:
-            if t.name in setting.SOURCE_LIST:
-                t.join()
-        if ttjjw.result() or xljj.result() or ajj.result() or jjmmw.result() or txcj.result():
-            data.append((ttjjw.result(), xljj.result(), ajj.result(), jjmmw.result(), txcj.result()))
-    push_msg.server_chan(data)
+
+    while 1:
+        try:
+            print(data_queue.get_nowait())
+        except:
+            pass
+    # push_msg.server_chan(data_queue)
