@@ -14,7 +14,9 @@ if __name__ == '__main__':
     data_dict = manager.dict()
     name_dict = manager.dict()
     for code in fund_list:
-        data_dict[code] = manager.dict({source: manager.list() for source in source_list})
+        data_dict[code] = manager.dict(
+            {source: manager.list()
+             for source in source_list})
         name_dict[code] = str()
 
     # 进程相关
