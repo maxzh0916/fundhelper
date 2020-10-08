@@ -1,33 +1,43 @@
 import api
-import setting
+import check
 import push_msg
-from multiprocessing import Queue
+
+import multiprocessing
 
 if __name__ == '__main__':
-    data_queue = Queue()
+    check.trading_time()  # 检查交易时间
+    fund_list = check.code()  # 检查基金代码，并返回正确的列表
+    source_list = check.source()  # 检查数据来源，并返回正确的基金列表
 
-    # 检测交易时间
-    if setting.TRADING_TIME:
-        market_stat = api.market_stat()
-        if not market_stat:
-            print('非交易时间，退出程序')
-            exit()
+    # 通信相关
+    manager = multiprocessing.Manager()
+    data_dict = manager.dict()
+    name_dict = manager.dict()
+    for code in fund_list:
+        data_dict[code] = manager.dict({source: manager.list() for source in source_list})
+        name_dict[code] = str()
 
-    # 启动进程
-    for code in setting.FUND_LIST:
-        ttjjw = api.TTJJW(code, data_queue)
-        xljj = api.XLJJ(code, data_queue)
-        ajj = api.AJJ(code, data_queue)
-        jjmmw = api.JJMMW(code, data_queue)
-        txcj = api.TXCJ(code, data_queue)
-        processes = [ttjjw, xljj, ajj, jjmmw, txcj]
-        for t in processes:
-            if t.name in setting.SOURCE:
-                t.start()
-
-    while 1:
-        try:
-            print(data_queue.get_nowait())
-        except:
-            pass
-    # push_msg.server_chan(data_queue)
+    # 进程相关
+    pool = list()
+    # 启动爬虫
+    for code in fund_list:
+        if '天天基金网' in source_list:
+            ttjjw = api.TTJJW(code, data_dict, name_dict)
+            pool.append(ttjjw)
+        if '新浪基金' in source_list:
+            xljj = api.XLJJ(code, data_dict)
+            pool.append(xljj)
+        if '爱基金' in source_list:
+            ajj = api.AJJ(code, data_dict)
+            pool.append(ajj)
+        if '基金买卖网' in source_list:
+            jjmmw = api.JJMMW(code, data_dict)
+            pool.append(jjmmw)
+        if '腾讯财经' in source_list:
+            txcj = api.TXCJ(code, data_dict)
+            pool.append(txcj)
+    for t in pool:
+        t.start()
+    for t in pool:
+        t.join()
+    push_msg.server_chan(name_dict, data_dict)

@@ -3,20 +3,12 @@ import setting
 import time
 
 
-def server_chan(data):
+def server_chan(name_dict, data_dict):
     text = str()
-    for i in data:
-        if i[0]:
-            text = text + '=====' + i[0][3] + i[0][0] + '=====\n\n'
-            text = text + '天天基金网：' + i[0][1] + ',' + i[0][2] + '\n\n'
-        if i[1]:
-            text = text + '新浪基金：' + i[1][1] + ',' + i[1][2] + '\n\n'
-        if i[2]:
-            text = text + '爱基金：' + i[2][1] + ',' + i[2][2] + '\n\n'
-        if i[3]:
-            text = text + '基金买卖网：' + i[3][1] + ',' + i[3][2] + '\n\n'
-        if i[4]:
-            text = text + '腾讯财经：' + i[4][1] + ',' + i[4][2] + '\n\n\n\n'
+    for code in data_dict.keys():
+        text = text + '======' + name_dict[code] + '======\n\n'
+        for source in data_dict[code].keys():
+            text = text + source + '：' + data_dict[code][source][0] + ', ' + data_dict[code][source][1] + '\n\n'
     if setting.SERVER_CHAN_PUSH:
         params = {'text': time.strftime("%Y-%m-%d", time.localtime()) + '每日推送',
                   'desp': text
