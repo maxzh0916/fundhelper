@@ -13,12 +13,12 @@ def trading_time():
 
 def code():
     fund_list = []
-    re_fund_list = re.compile('^\d{6}$')
+    re_fund_list = re.compile('^\\d{6}$')
     for i in setting.FUND_LIST:
         try:
             result = re.match(re_fund_list, i).group()
             fund_list.append(result)
-        except:
+        except AttributeError:
             print(str(i) + ' 不是正确的基金代码，请检查后再试')
     return fund_list
 
