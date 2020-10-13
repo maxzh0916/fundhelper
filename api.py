@@ -18,11 +18,10 @@ def market_stat():
 
 
 class TTJJW(multiprocessing.Process):
-    def __init__(self, fund_code, data_dict, name_dict):
+    def __init__(self, fund_code, data_dict):
         multiprocessing.Process.__init__(self)
         self.fund_code = fund_code
         self.data_dict = data_dict
-        self.name_dict = name_dict
 
     def run(self):
         response = requests.get('http://fundgz.1234567.com.cn/js/' +
@@ -36,7 +35,6 @@ class TTJJW(multiprocessing.Process):
                 0, processed['zxgz'])
             self.data_dict[self.fund_code]['天天基金网'].insert(
                 1, float(processed['chg']))
-            self.name_dict[self.fund_code] = processed['name']
 
 
 class XLJJ(multiprocessing.Process):
@@ -123,3 +121,20 @@ class TXCJ(multiprocessing.Process):
                 1,
                 round((response['data']['data'][-1][2] /
                        float(response['data']['yesterdayDwjz']) * 100), 2))
+
+
+class Get_Name(multiprocessing.Process):
+    def __init__(self, fund_code, name_dict):
+        multiprocessing.Process.__init__(self)
+        self.fund_code = fund_code
+        self.name_dict = name_dict
+
+    def run(self):
+        response = requests.get('http://fundgz.1234567.com.cn/js/' +
+                                self.fund_code + '.js')
+        status_code = response.status_code
+        if status_code == 200:
+            processed = parse(
+                'jsonpgz({"fundcode":"{code}","name":"{name}","jzrq":"{jztime}","dwjz":"{dwjz}","gsz":"{zxgz}","gszzl":"{chg}","gztime":"{gztime}"});',
+                response.text)
+            self.name_dict[self.fund_code] = processed['name']

@@ -23,8 +23,10 @@ if __name__ == '__main__':
     pool = list()
     # 启动爬虫
     for code in fund_list:
+        get_name = api.Get_Name(code, name_dict)
+        pool.append(get_name)
         if '天天基金网' in source_list:
-            ttjjw = api.TTJJW(code, data_dict, name_dict)
+            ttjjw = api.TTJJW(code, data_dict)
             pool.append(ttjjw)
         if '新浪基金' in source_list:
             xljj = api.XLJJ(code, data_dict)
