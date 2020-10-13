@@ -35,7 +35,7 @@ class TTJJW(multiprocessing.Process):
             self.data_dict[self.fund_code]['天天基金网'].insert(
                 0, processed['zxgz'])
             self.data_dict[self.fund_code]['天天基金网'].insert(
-                1, processed['chg'] + '%')
+                1, float(processed['chg']))
             self.name_dict[self.fund_code] = processed['name']
 
 
@@ -55,8 +55,7 @@ class XLJJ(multiprocessing.Process):
         try:
             self.data_dict[self.fund_code]['新浪基金'].insert(0, processed['zxgz'])
             self.data_dict[self.fund_code]['新浪基金'].insert(
-                1,
-                str(round(float(processed['chg']), 2)) + '%')
+                1, round(float(processed['chg']), 2))
         except TypeError:
             pass
 
@@ -86,10 +85,8 @@ class AJJ(multiprocessing.Process):
                 0, str(round(float(processed[-1][1]), 4)))
             self.data_dict[self.fund_code]['爱基金'].insert(
                 1,
-                str(
-                    round(
-                        ((float(processed[-1][1]) - float(processed[-1][2])) /
-                         float(processed[-1][2]) * 100), 2)) + '%')
+                round(((float(processed[-1][1]) - float(processed[-1][2])) /
+                       float(processed[-1][2]) * 100), 2))
 
 
 class JJMMW(multiprocessing.Process):
@@ -106,8 +103,7 @@ class JJMMW(multiprocessing.Process):
             self.data_dict[self.fund_code]['基金买卖网'].insert(
                 0, str(round(response['latest']['estnav'], 4)))
             self.data_dict[self.fund_code]['基金买卖网'].insert(
-                1,
-                str(round(response['latest']['estchngpct'], 2)) + '%')
+                1, round(response['latest']['estchngpct'], 2))
 
 
 class TXCJ(multiprocessing.Process):
@@ -125,8 +121,5 @@ class TXCJ(multiprocessing.Process):
                 0, str(response['data']['data'][-1][1]))
             self.data_dict[self.fund_code]['腾讯财经'].insert(
                 1,
-                str(
-                    round(
-                        (response['data']['data'][-1][2] /
-                         float(response['data']['yesterdayDwjz']) * 100), 2)) +
-                '%')
+                round((response['data']['data'][-1][2] /
+                       float(response['data']['yesterdayDwjz']) * 100), 2))
