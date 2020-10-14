@@ -44,4 +44,5 @@ if __name__ == '__main__':
         t.start()
     for t in pool:
         t.join()
-    push_msg.server_chan(name_dict, data_dict)
+    text = push_msg.creat_text(name_dict, data_dict)
+    push_msg.server_chan(text)
